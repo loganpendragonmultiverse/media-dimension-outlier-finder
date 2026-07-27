@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "name": "a",
+      "width": 100,
+      "height": 100,
+      "bytes": 1000
+    },
+    {
+      "name": "b",
+      "width": 110,
+      "height": 100,
+      "bytes": 1100
+    },
+    {
+      "name": "poster",
+      "width": 1000,
+      "height": 100,
+      "bytes": 12000
+    }
+  ],
+  "factor": 2
+}
