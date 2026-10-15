@@ -109,3 +109,27 @@ def test_aspect_profile_uses_unrounded_dimensions():
         }
     )
     assert report["profile_findings"][0]["matches"]
+
+
+def test_supplied_derived_and_conflicting_aspect_ratios():
+    report = analyze(
+        {
+            "profiles": {"p": {"aspect_ratio": {"min": 1, "max": 2}}},
+            "items": [
+                {"aspect_ratio": 1.5, "profile": "p"},
+                {"width": 3, "height": 2, "profile": "p"},
+                {"width": 3, "height": 2, "aspect_ratio": 9, "profile": "p"},
+                {"width": 10, "aspect_ratio": 1.5, "profile": "p"},
+                {"profile": "p"},
+            ],
+        }
+    )
+    assert [f["matches"] for f in report["profile_findings"]] == [True, True, True, True, False]
+    assert [i["aspect_ratio_source"] for i in report["items"]] == [
+        "supplied",
+        "dimensions",
+        "dimensions",
+        "supplied",
+        "missing",
+    ]
+    assert [i["aspect_ratio"] for i in report["items"]] == [1.5, 1.5, 1.5, 1.5, None]

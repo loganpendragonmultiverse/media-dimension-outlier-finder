@@ -50,3 +50,8 @@ do not change those medians or infer a profile. Supplied metrics and bounds must
 be finite positive numbers; factor must be finite and greater than one.
 Image paths can supply image dimensions through Pillow. Video metadata must be
 provided explicitly; this tool does not probe videos or alter media.
+
+A supplied positive finite aspect_ratio is preserved when both dimensions are not
+available. When width and height are both available, their derived ratio takes
+precedence over any supplied ratio; profile bounds use that unrounded value.
+Each item reports aspect_ratio_source as supplied, dimensions, or missing.

@@ -79,10 +79,13 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
                 ):
                     raise ValueError(f"{metric} must be a finite positive number")
         width, height = (float(item.get("width", 0)), float(item.get("height", 0)))
-        ratio = width / height if width and height else None
+        ratio = width / height if width and height else item.get("aspect_ratio")
         if ratio is not None and (not math.isfinite(ratio) or ratio <= 0):
             raise ValueError("derived aspect_ratio must be a finite positive number")
-        item["aspect_ratio"] = round(ratio, 4) if ratio is not None else None
+        item["aspect_ratio"] = round(ratio, 4) if ratio is not None and width and height else ratio
+        item["aspect_ratio_source"] = (
+            "dimensions" if width and height else ("supplied" if ratio is not None else "missing")
+        )
         prepared.append(item)
         for metric, collected in metrics.items():
             value = item.get(metric)
