@@ -68,7 +68,7 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
             with Image.open(path) as image:
                 item["width"], item["height"] = image.size
             item.setdefault("bytes", path.stat().st_size)
-        for metric in ("width", "height", "duration", "bytes"):
+        for metric in ("width", "height", "duration", "bytes", "aspect_ratio"):
             if metric in item:
                 value = item[metric]
                 if (
@@ -79,7 +79,10 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
                 ):
                     raise ValueError(f"{metric} must be a finite positive number")
         width, height = (float(item.get("width", 0)), float(item.get("height", 0)))
-        item["aspect_ratio"] = round(width / height, 4) if height else None
+        ratio = width / height if width and height else None
+        if ratio is not None and (not math.isfinite(ratio) or ratio <= 0):
+            raise ValueError("derived aspect_ratio must be a finite positive number")
+        item["aspect_ratio"] = round(ratio, 4) if ratio is not None else None
         prepared.append(item)
         for metric, collected in metrics.items():
             value = item.get(metric)
@@ -113,6 +116,8 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
                         reasons.append(f"orientation={actual}, expected {bounds}")
             else:
                 value = item.get(metric)
+                if metric == "aspect_ratio" and item.get("width") and item.get("height"):
+                    value = item["width"] / item["height"]
                 if value is None:
                     reasons.append(f"{metric}: missing metadata")
                 elif value < bounds.get("min", 0) or value > bounds.get("max", float("inf")):

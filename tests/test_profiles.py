@@ -90,3 +90,22 @@ def test_image_dimensions_remain_available(tmp_path):
         }
     )
     assert report["profile_findings"][0]["matches"]
+
+
+def test_missing_dimension_and_nonfinite_aspect_metadata():
+    profile = {"p": {"aspect_ratio": {"min": 1}}}
+    report = analyze({"profiles": profile, "items": [{"height": 10, "profile": "p"}]})
+    assert report["profile_findings"][0]["reasons"] == ["aspect_ratio: missing metadata"]
+    for item in ({"aspect_ratio": float("nan")}, {"width": 1e308, "height": 1e-308}):
+        with pytest.raises(ValueError, match="finite positive"):
+            analyze({"items": [item]})
+
+
+def test_aspect_profile_uses_unrounded_dimensions():
+    report = analyze(
+        {
+            "profiles": {"p": {"aspect_ratio": {"min": 1.00001}}},
+            "items": [{"width": 100001, "height": 100000, "profile": "p"}],
+        }
+    )
+    assert report["profile_findings"][0]["matches"]
