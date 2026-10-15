@@ -36,3 +36,17 @@ python -m build
 The project is feature-complete for its documented v1 scope. Maintenance focuses on correctness, security, compatibility, and well-supported input improvements.
 
 Part of the [Logan Pendragon Forge open-source collection](https://www.loganpendragonforge.com/open-source/). Licensed under the [MIT License](LICENSE).
+
+## Named expected profiles (1.1)
+
+Optional profiles map explicit names to constraints; each item selects one with
+its profile field. Example:
+    "profiles": {"cover": {"width": {"min": 600, "max": 1200}, "orientation": "portrait"}}
+Bounds are inclusive and may constrain width, height, aspect_ratio, duration, or
+bytes. Orientation is portrait, landscape, or square. Profile findings include
+matches and missing-metadata reasons separately from the original relative outliers.
+Unassigned items still participate in the original batch medians. Mixed profiles
+do not change those medians or infer a profile. Supplied metrics and bounds must
+be finite positive numbers; factor must be finite and greater than one.
+Image paths can supply image dimensions through Pillow. Video metadata must be
+provided explicitly; this tool does not probe videos or alter media.
