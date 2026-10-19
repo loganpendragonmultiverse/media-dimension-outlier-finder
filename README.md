@@ -1,5 +1,12 @@
 # Media Dimension Outlier Finder
 
+> ⭐ **Gold Star Project — v1.1.1**
+> I consider this project complete. Fixes, maintenance and good new ideas are still welcome.
+> [About Gold Stars](https://www.loganpendragonforge.com/open-source/?gold=1)
+>
+> Review supplied media metadata and local image dimensions against batch medians and explicit profiles.
+
+
 [![CI](https://github.com/loganpendragonmultiverse/media-dimension-outlier-finder/actions/workflows/ci.yml/badge.svg)](https://github.com/loganpendragonmultiverse/media-dimension-outlier-finder/actions/workflows/ci.yml)
 
 Detect unusual media dimensions, aspect ratios, durations, and sizes in a batch. The command uses explicit UTF-8 JSON input and produces reviewable JSON or Markdown output.
@@ -55,3 +62,30 @@ A supplied positive finite aspect_ratio is preserved when both dimensions are no
 available. When width and height are both available, their derived ratio takes
 precedence over any supplied ratio; profile bounds use that unrounded value.
 Each item reports aspect_ratio_source as supplied, dimensions, or missing.
+
+## Report and installation contract (1.1.1)
+
+The input root must be a JSON object. Invalid input produces `error:` on stderr
+and exit status 2 without creating a report. Existing output symlinks are rejected explicitly before exclusive file creation.
+Exclusive creation refuses existing ordinary files and ordinary files created
+between validation and writing. Symlink checks and creation are separate operations;
+concurrent link or parent-directory replacement is outside this guarantee. Parent directories must already exist. An interrupted
+or failed write can leave a partial newly created report; multiple-file atomicity
+and filesystem rollback are not provided.
+
+Install a downloaded wheel with `python -m pip install /path/to/package.whl`,
+or install the source distribution with `python -m pip install /path/to/package.tar.gz`.
+Wheel installs include README, DEVELOPMENT, TESTING and CHANGELOG under
+`sysconfig.get_path("data")/share/doc/media-dimension-outlier-finder`, with the sample in `examples/sample.json`.
+The source distribution contains the same documents and example. Inputs stay local;
+no telemetry or network retrieval is added.
+
+Items must be a non-empty list of objects and profiles a named object mapping.
+Supplied metrics and profile bounds must fit finite positive floating-point values;
+very large integer values are rejected before conversion. Two large finite middle
+values retain a finite batch median. Image paths are opened only when dimensions
+are incomplete; image errors are reported without changing the image. Video
+metadata remains supplied explicitly, and outliers remain review aids.
+
+A failed stdout write or flush returns status 2 without a shutdown traceback,
+including a closed reader or a full output device.

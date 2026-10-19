@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "media-dimension-outlier-finder"
-version = "1.1.0"
+version = "1.1.1"
 description = "Detect unusual media dimensions, aspect ratios, durations, and sizes in a batch."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,3 +35,7 @@ omit = ["src/*/__main__.py"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=media_dimension_outlier_finder --cov-branch --cov-report=term-missing --cov-fail-under=90"
+
+[tool.setuptools.data-files]
+"share/doc/media-dimension-outlier-finder" = ["README.md", "CHANGELOG.md", "DEVELOPMENT.md", "TESTING.md"]
+"share/doc/media-dimension-outlier-finder/examples" = ["examples/sample.json"]
