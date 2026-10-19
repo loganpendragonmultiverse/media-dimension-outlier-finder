@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import statistics
 from pathlib import Path
 from typing import Any
 
@@ -16,11 +15,43 @@ def _require(data: dict[str, Any], key: str) -> Any:
     return value
 
 
+def _positive_number(value: Any, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{field} must be a finite positive number")  # noqa: TRY004 - CLI input validation
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise ValueError(f"{field} must be a finite positive number") from exc
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError(f"{field} must be a finite positive number")
+    return number
+
+
+def _median(values: list[float]) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[middle]
+    lower, upper = ordered[middle - 1], ordered[middle]
+    median = (lower + upper) / 2
+    return median if math.isfinite(median) else lower + (upper - lower) / 2
+
+
 def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
     items = _require(data, "items")
+    if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+        raise ValueError("items must be a non-empty list of objects")
+    try:
+        factor = float(data.get("factor", 2.0))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("factor must be finite and greater than one") from exc
+    if not math.isfinite(factor) or factor <= 1:
+        raise ValueError("factor must be finite and greater than one")
     profiles = data.get("profiles", {})
     if not isinstance(profiles, dict):
-        raise TypeError("profiles must be an object of named profiles")
+        raise ValueError("profiles must be an object of named profiles")  # noqa: TRY004 - CLI input validation
     supported = {"width", "height", "duration", "bytes", "aspect_ratio"}
     for name, profile in profiles.items():
         if (
@@ -43,13 +74,7 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
             ):
                 raise ValueError("profile metrics require min and/or max bounds")
             for value in bounds.values():
-                if (
-                    isinstance(value, bool)
-                    or not isinstance(value, (int, float))
-                    or not math.isfinite(value)
-                    or value <= 0
-                ):
-                    raise ValueError("profile bounds must be finite positive numbers")
+                _positive_number(value, "profile bound")
             if bounds.get("min", 0) > bounds.get("max", float("inf")):
                 raise ValueError("profile minimum exceeds maximum")
     metrics: dict[str, list[float]] = {
@@ -64,6 +89,8 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
         if item.get("path") and ("width" not in item or "height" not in item):
             from PIL import Image
 
+            if not isinstance(item["path"], (str, Path)):
+                raise ValueError("path must be a filename")
             path = Path(item["path"])
             with Image.open(path) as image:
                 item["width"], item["height"] = image.size
@@ -71,13 +98,7 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
         for metric in ("width", "height", "duration", "bytes", "aspect_ratio"):
             if metric in item:
                 value = item[metric]
-                if (
-                    isinstance(value, bool)
-                    or not isinstance(value, (int, float))
-                    or not math.isfinite(value)
-                    or value <= 0
-                ):
-                    raise ValueError(f"{metric} must be a finite positive number")
+                _positive_number(value, metric)
         width, height = (float(item.get("width", 0)), float(item.get("height", 0)))
         ratio = width / height if width and height else item.get("aspect_ratio")
         if ratio is not None and (not math.isfinite(ratio) or ratio <= 0):
@@ -91,12 +112,7 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
             value = item.get(metric)
             if isinstance(value, (int, float)) and value > 0:
                 collected.append(float(value))
-    medians = {
-        metric: statistics.median(values) if values else None for metric, values in metrics.items()
-    }
-    factor = float(data.get("factor", 2.0))
-    if not math.isfinite(factor) or factor <= 1:
-        raise ValueError("factor must be finite and greater than one")
+    medians = {metric: _median(values) for metric, values in metrics.items()}
     profile_findings = []
     for index, item in enumerate(prepared):
         if "profile" not in item:
@@ -160,6 +176,8 @@ def _media_outliers(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def analyze(data: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise ValueError("input must be a JSON object")  # noqa: TRY004 - CLI input validation
     return {"version": 1, "project": PROJECT, **_media_outliers(data)}
 
 
