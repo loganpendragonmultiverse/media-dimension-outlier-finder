@@ -135,3 +135,26 @@ def test_small_stdout_device_failure_is_a_clean_process_error(tmp_path):
     assert result.returncode == 2
     assert result.stderr.startswith("error:")
     assert "Traceback" not in result.stderr and "Exception ignored" not in result.stderr
+
+
+def test_existing_link_is_refused_when_exclusive_open_would_follow_it(
+    tmp_path, monkeypatch, capsys
+):
+    source = tmp_path / "source.json"
+    source.write_text(json.dumps(valid_input()), encoding="utf-8")
+    target, output = tmp_path / "target.json", tmp_path / "report.json"
+    try:
+        output.symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlink creation is unavailable")
+    original_open = Path.open
+
+    def platform_open(path, mode="r", *args, **kwargs):
+        if path == output and mode == "x":
+            return original_open(target, "w", *args, **kwargs)
+        return original_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", platform_open)
+    assert main([str(source), "--output", str(output)]) == 2
+    assert output.is_symlink() and not target.exists()
+    assert capsys.readouterr().err.startswith("error:")

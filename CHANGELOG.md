@@ -2,6 +2,7 @@
 
 ## [1.1.1] - 2026-10-19
 
+- Reject existing output symlinks explicitly before exclusive creation on every platform.
 - Handle failed stdout writes and flushes without an interpreter-shutdown traceback.
 - Reject malformed item/profile containers, invalid factors and out-of-range numeric inputs with concise CLI errors.
 - Keep medians finite for large finite metrics without changing profile or aspect-ratio rules.

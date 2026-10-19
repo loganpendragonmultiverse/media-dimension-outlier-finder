@@ -21,3 +21,7 @@ status 2 without a traceback or interpreter-shutdown warning.
 
 A small-report subprocess regression writes stdout to /dev/full and requires
 status 2 without an interpreter-shutdown warning; skip when the device is absent.
+
+Keep the real dangling-output-link check enabled on Windows when symlink creation
+is available. Also simulate an exclusive-open implementation that follows an
+existing dangling link, requiring status 2 and an unchanged link/missing target.

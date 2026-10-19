@@ -66,9 +66,10 @@ Each item reports aspect_ratio_source as supplied, dimensions, or missing.
 ## Report and installation contract (1.1.1)
 
 The input root must be a JSON object. Invalid input produces `error:` on stderr
-and exit status 2 without creating a report. Existing output paths, including
-symlinks and files created between validation and writing, are refused through
-exclusive file creation. Parent directories must already exist. An interrupted
+and exit status 2 without creating a report. Existing output symlinks are rejected explicitly before exclusive file creation.
+Exclusive creation refuses existing ordinary files and ordinary files created
+between validation and writing. Symlink checks and creation are separate operations;
+concurrent link or parent-directory replacement is outside this guarantee. Parent directories must already exist. An interrupted
 or failed write can leave a partial newly created report; multiple-file atomicity
 and filesystem rollback are not provided.
 
